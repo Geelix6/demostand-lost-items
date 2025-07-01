@@ -3,11 +3,15 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.fsm.storage.memory import MemoryStorage
 from handlers import start, lost_item
-from keyboards.inline import start_kb
+from models.db import engine, Base
+from models.item import Item 
 from utils.config import settings
 
 
 async def main():
+    async with engine.begin() as conn:
+      await conn.run_sync(Base.metadata.create_all)
+
     bot = Bot(token=settings.TG_BOT_TOKEN)
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage)
