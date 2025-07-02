@@ -16,5 +16,13 @@ services:
       timeout: 5s
       retries: 10
 
+  bot:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   demostand_postgres_data:
