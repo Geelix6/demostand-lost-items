@@ -3,7 +3,7 @@ import uuid
 from models.db import Base
 from sqlalchemy import Column, String, Enum as Enum
 from sqlalchemy.dialects.postgresql import UUID, TIMESTAMP
-
+from pgvector.sqlalchemy import Vector
 
 class Location(enum.Enum):
     wagon = "в вагоне"
@@ -23,12 +23,10 @@ class Item(Base):
     date_lost = Column(
         TIMESTAMP(timezone=False, precision=3),
         nullable=False,
-        index=True
     )
     station = Column(
         String(length=63),
         nullable=False,
-        index=True
     )
     description = Column(
         String(length=4095),
@@ -37,4 +35,8 @@ class Item(Base):
     location = Column(
         Enum(Location, name="location_enum"),
         nullable=False
+    )
+    embedding = Column(
+        Vector(384),
+        nullable=True,
     )

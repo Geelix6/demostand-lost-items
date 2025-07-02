@@ -5,6 +5,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from handlers import start, lost_item
 from models.db import engine, Base
 from models.item import Item 
+from services.embeddings import get_embedding
 from utils.config import settings
 
 

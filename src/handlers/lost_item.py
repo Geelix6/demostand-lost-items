@@ -2,7 +2,11 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 from datetime import datetime
 from keyboards.inline import retry_kb
+from models.db import SessionLocal
+from services.embeddings import get_embedding
+from services.search import semantic_search
 from state.lost_state import LostState
+from utils.md import md_escape
 
 
 async def cancel_handler(message: types.Message, state: FSMContext):
@@ -38,17 +42,26 @@ async def description_handler(message: types.Message, state: FSMContext):
     station = data["station"]
     desc = message.text.strip()
 
-    results = [{
-        "station": station,
-        "date_lost": date_lost,
-        "description": desc
-    }]
+    await message.answer("Пожалуйста, подождите... Идёт поиск вещей по вашему описанию 🔍")
 
-    reply = "Возможные совпадения:\n" + "\n".join(
-        f"{item['station']} {item['date_lost']} – {item['description'][:50]}…"
-        for item in results
-    )
-    await message.answer(reply)
+    query_emb = get_embedding(desc)
+    async with SessionLocal() as session:
+        results = await semantic_search(session, query_emb, limit=5)
+
+
+    if results:
+        reply_lines = ["*Найдены возможные совпадения:*\n"]
+        for item in results:
+            lost_date = item.date_lost.strftime('%d.%m.%Y')
+            reply_lines.append(f"*Дата находки:* {md_escape(lost_date)}")
+            reply_lines.append(f"*Станция метро:* {md_escape(item.station)}")
+            reply_lines.append(f"*Описание вещи:* {md_escape(item.description)}")
+            reply_lines.append("")
+        reply = "\n".join(reply_lines).strip()
+    else:
+        reply = "Совпадений не найдено."
+
+    await message.answer(reply, parse_mode="MarkdownV2")
     await message.answer(
         "Если вашей вещи нет в похожих, попробуйте поискать ещё раз:",
         reply_markup=retry_kb
